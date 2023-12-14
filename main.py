@@ -3,17 +3,34 @@ import random
 from string import ascii_letters
 from flask import Flask, request, render_template, redirect, url_for, session
 from flask_socketio import SocketIO, join_room, leave_room, send
-from flask_talisman import Talisman
+from flask_talisman import Talisman, ALLOW_FROM
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from dotenv import load_dotenv
 
 load_dotenv()
 
+csp = {
+    'default-src': [
+        '\'self\'',
+        'cdnjs.cloudflare.com',
+        'code.jquery.com',
+        'stackpath.bootstrapcdn.com',
+        'unpkg.com',
+    ],
+    'script-src': [
+        '\'self\'',
+        'cdnjs.cloudflare.com',
+        'code.jquery.com',
+        'stackpath.bootstrapcdn.com',
+        'unpkg.com',
+        '\'unsafe-inline\''
+    ]
+}
+
 app = Flask(__name__)
-Talisman(app)
-limiter = Limiter(app, key_func=get_remote_address)
-app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
+Talisman(app, content_security_policy=csp)
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
 rooms = {}
@@ -26,7 +43,6 @@ def generate_room_code(length: int, existing_codes: list[str]) -> str:
             return code
 
 @app.route('/', methods=["GET", "POST"])
-@limiter.limit("15/minute")
 def home():
     session.clear()
     if request.method == "POST":
@@ -58,7 +74,6 @@ def home():
         return render_template('home.html')
     
 @app.route('/room')
-@limiter.limit("30/minute")
 def room():
     room = session.get('room')
     name = session.get('name')
