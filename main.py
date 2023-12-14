@@ -1,3 +1,4 @@
+import os
 import random
 from string import ascii_letters
 from flask import Flask, request, render_template, redirect, url_for, session
@@ -5,11 +6,14 @@ from flask_socketio import SocketIO, join_room, leave_room, send
 from flask_talisman import Talisman
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 Talisman(app)
 limiter = Limiter(app, key_func=get_remote_address)
-app.config["SECRET_KEY"] = "supersecretkey"
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY")
 socketio = SocketIO(app)
 
 rooms = {}
