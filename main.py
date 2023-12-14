@@ -30,6 +30,7 @@ csp = {
 
 app = Flask(__name__)
 Talisman(app, content_security_policy=csp)
+limiter = Limiter(get_remote_address, app=app)
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 socketio = SocketIO(app)
 
@@ -43,6 +44,7 @@ def generate_room_code(length: int, existing_codes: list[str]) -> str:
             return code
 
 @app.route('/', methods=["GET", "POST"])
+@limiter.limit("15/minute")
 def home():
     session.clear()
     if request.method == "POST":
@@ -74,6 +76,7 @@ def home():
         return render_template('home.html')
     
 @app.route('/room')
+@limiter.limit("30/minute")
 def room():
     room = session.get('room')
     name = session.get('name')
